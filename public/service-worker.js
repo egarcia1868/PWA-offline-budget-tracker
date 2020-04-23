@@ -6,6 +6,7 @@ const FILES_TO_CACHE = [
   "/manifest.webmanifest",
   "/icons/icon-192x192.png",
   "/icons/icon-512x512.png",
+  "/db.js"
 ];
 
 
@@ -13,6 +14,7 @@ const CACHE_NAME = "static-cache-v2";
 const DATA_CACHE_NAME = "data-cache-v1";
 
 // install
+// this stores all the files designated in "FILE_TO_CACHE" into the CACHE_NAME cache
 self.addEventListener("install", function(evt) {
   evt.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
@@ -24,6 +26,7 @@ self.addEventListener("install", function(evt) {
   self.skipWaiting();
 });
 
+// this will replace the cached data files with the new ones if the their names don't match.
 self.addEventListener("activate", function(evt) {
   evt.waitUntil(
     caches.keys().then(keyList => {
@@ -43,6 +46,10 @@ self.addEventListener("activate", function(evt) {
 
 // fetch
 self.addEventListener("fetch", function(evt) {
+  if (evt.request.method !== "GET" || !evt.request.url.startsWith(self.location.origin)) {
+    evt.respondWith(fetch(evt.request));
+    return;
+  }
   // cache successful requests to the API
   if (evt.request.url.includes("/api/")) {
     evt.respondWith(
@@ -68,9 +75,22 @@ self.addEventListener("fetch", function(evt) {
 
   // if the request is not for the API, serve static assets using "offline-first" approach.
   // see https://developers.google.com/web/fundamentals/instant-and-offline/offline-cookbook#cache-falling-back-to-network
+  
   evt.respondWith(
-    caches.match(evt.request).then(function(response) {
-      return response || fetch(evt.request);
+    caches.match(evt.request).then(response => {
+      // if response is found in cache, pull from cache
+      if (response) {
+        console.log("cached --> ", response);
+        return response;
+      }
+      // then open the data cache, take the new info and add it to the cache, clone the new "database" to the main database, then return with the updated info.
+      return caches.open(DATA_CACHE_NAME).then(cache => {
+        return fetch(evt.request).then(response => {
+          return cache.put(evt.request, response.clone()).then(() => {
+            return response;
+          })
+        });
+      })
     })
-  );
+  )
 });
