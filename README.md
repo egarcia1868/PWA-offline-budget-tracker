@@ -13,7 +13,7 @@ A simple PWA that tracks your budget by adding/subtracting "funds" from a databa
 
 ### Screenshot
 
-![Screenshot!](/images/budgetTracker.png "Screenshot of how the generated employees display")
+![Screenshot!](/public/images/budgetTracker.png?raw=true "Screenshot of how the generated employees display")
 This is how the generated employee list would look if you entered a manager, 2 engineers, and 2 interns.
 
 
